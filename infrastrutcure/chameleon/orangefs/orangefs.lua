@@ -1,13 +1,13 @@
 -- OrangeFS module file
 
 whatis("Name: OrangeFS")
-whatis("Version: 2.10.1")
+whatis("Version: 2.10.0")
 whatis("Category: parallel filesystem, HPC")
 whatis("Description: OrangeFS user‐ and kernel‐space tools.")
 whatis("URL: http://www.orangefs.org")
 
 help([[
-OrangeFS 2.10.1 modulefile:
+OrangeFS 2.10.0 modulefile:
 
 - Loads the required OpenMPI module automatically.
 - Sets environment variables for OrangeFS binaries, libraries, man pages.
@@ -15,13 +15,13 @@ OrangeFS 2.10.1 modulefile:
     * \$HOME/.orangefs.conf if it exists
     * otherwise falls back to /etc/orangefs/orangefs-server.conf
 
-Configure options: --prefix=/opt/orangefs/2.10.1 --with-db-backend=lmdb --enable-shared
+Configure options: --prefix=/opt/orangefs/2.10.0 --with-db-backend=lmdb --enable-shared
 Usage:
-  module load orangefs/2.10.1
+  module load orangefs/2.10.0
 ]])
 
 -- Set the installation directory
-local prefix = "/opt/orangefs/2.10.1"
+local prefix = "/opt/orangefs/2.10.0"
 
 -- Define OrangeFS directories
 local bin_dir = pathJoin(prefix, "bin")
@@ -31,8 +31,6 @@ local include_dir = pathJoin(prefix, "include")
 local etc_dir = pathJoin(prefix, "etc")
 local man_dir = pathJoin(prefix, "share", "man")
 
--- NOTE: if using modules, else remove this
-depends_on("openmpi/5.0.5-cphqvsy")
 
 -- Add OrangeFS directories to PATH, LD_LIBRARY_PATH, CPATH, C_INCLUDE_PATH, ETCPATH, and MANPATH
 prepend_path("PATH", bin_dir)
@@ -49,7 +47,7 @@ local orangefs_flags = string.format("-L %s/lib -I %s/include -lpvfs2", prefix, 
 
 local user = os.getenv("USER") or ""
 local home = os.getenv("HOME") or ""
-local user_conf = pathJoin(home, ".orangefs.conf")
+local user_conf = pathJoin(etc_dir, "orangefs.conf")
 -- local system_conf = "/etc/orangefs/orangefs-server.conf"
 local chosen_conf
 
@@ -87,12 +85,12 @@ setenv("MPIIO_HINTS", "romio_fs_pvfs2")
 
 -- Inform user
 if mode() == "load" then
-	LmodMessage("OrangeFS 2.10.1 loaded; using config: " .. chosen_conf)
+	LmodMessage("OrangeFS 2.10.0 loaded; using config: " .. chosen_conf)
 	LmodMessage("OrangeFS mount point: " .. mount_dir)
 	LmodMessage("OrangeFS data directory: " .. data_dir)
 	LmodMessage("OrangeFS metadata directory: " .. meta_dir)
 elseif mode() == "unload" then
-	LmodMessage("OrangeFS 2.10.1 unloaded.")
+	LmodMessage("OrangeFS 2.10.0 unloaded.")
 end
 
 family("orangefs")

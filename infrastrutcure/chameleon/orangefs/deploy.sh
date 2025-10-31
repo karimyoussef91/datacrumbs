@@ -40,7 +40,7 @@ count=0
 set -x
 set +e
 
-OFS_LMOD="orangefs/2.10"
+OFS_LMOD="orangefs/2.10.0"
 
 #echo "Setting up servers"
 #echo "Cleanup (Can Fail if nothing to clean)"

@@ -3,8 +3,8 @@
 set -e
 
 PKGNAM=orangefs
-VERSION="2.10.1"
-OFSURL="https://github.com/waltligon/orangefs/releases/download/2.10.1/orangefs-2.10.1.tar.gz"
+VERSION="2.10.0"
+OFSURL="https://github.com/waltligon/orangefs/releases/download/v.${VERSION}/orangefs-${VERSION}.tar.gz"
 
 wget $OFSURL
 tar zxvf ${PKGNAM}-${VERSION}.tar.gz
