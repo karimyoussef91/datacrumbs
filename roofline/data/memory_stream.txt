@@ -1,0 +1,5 @@
+threads=24
+elements=100000000
+best_seconds=0.016555
+bandwidth_gbs=144.973786
+checksum=7.000000

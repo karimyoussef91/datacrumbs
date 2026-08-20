@@ -321,7 +321,11 @@ void ChromeWriter::write_event(EventWithId* event_with_id) {
       std::lock_guard<std::mutex> lock(file_mutex_);
       std::string event_json = std::string(buffer, len) + ",\"args\":" + args_json + "}\n";
       DC_LOG_DEBUG("Writing event: %s", event_json.c_str());
+      if (!first_event_) {
+        compressor_->compress(",\n");
+      }
       compressor_->compress(event_json);
+      first_event_ = false;
     }
   }
   if (args != nullptr) {

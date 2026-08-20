@@ -1,0 +1,4 @@
+threads=24
+elapsed_seconds=0.125902
+gflops=152.499403
+checksum=283033195097.447205

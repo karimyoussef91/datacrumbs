@@ -1,0 +1,41 @@
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Thu Aug 20 20:37:48 2026
+Command line        : /home/cc/.local/ior/bin/ior -a POSIX -b 4m -t 4m -s 20 -F -w -r -e -o /home/cc/datacrumbs/roofline/data/io_roofline/ior-bandwidth
+Machine             : Linux xio-rooflines
+TestID              : 0
+StartTime           : Thu Aug 20 20:37:48 2026
+Path                : /home/cc/datacrumbs/roofline/data/io_roofline/ior-bandwidth.00000000
+FS                  : 219.4 GiB   Used FS: 12.5%   Inodes: 13.8 Mi   Used Inodes: 1.4%
+
+Options: 
+api                 : POSIX
+apiVersion          : 
+test filename       : /home/cc/datacrumbs/roofline/data/io_roofline/ior-bandwidth
+access              : file-per-process
+type                : independent
+segments            : 20
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 1
+tasks               : 24
+clients per node    : 24
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 1
+xfersize            : 4 MiB
+blocksize           : 4 MiB
+aggregate filesize  : 1.88 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     432.35     108.09     0.221960    4096       4096       0.001131   4.44       0.169524   4.44       0   
+read      67121      16789      0.001374    4096       4096       0.000041   0.028590   0.003919   0.028605   0   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write         432.35     432.35     432.35       0.00     108.09     108.09     108.09       0.00    4.44083         NA            NA     0     24  24    1   1     0        1         0    0     20  4194304  4194304    1920.0 POSIX      0
+read        67121.17   67121.17   67121.17       0.00   16780.29   16780.29   16780.29       0.00    0.02860         NA            NA     0     24  24    1   1     0        1         0    0     20  4194304  4194304    1920.0 POSIX      0
+Finished            : Thu Aug 20 20:37:53 2026

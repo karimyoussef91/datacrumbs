@@ -1,0 +1,19 @@
+{
+  "counts": {
+    "close": 834,
+    "fsync": 2,
+    "openat": 4309,
+    "read": 4193,
+    "write": 185
+  },
+  "cumulative_posix_seconds": 0.236329,
+  "event_count": 9523,
+  "has_byte_arguments": false,
+  "has_mpiio_events": false,
+  "processes": {
+    "11341": 8526,
+    "11345": 514,
+    "11346": 483
+  },
+  "trace": "/home/cc/traces/26/08/20/trace-cc-mpi-ior-2rank-linked-xio-rooflines-ior-mpi-syscalls.pfw.gz"
+}
