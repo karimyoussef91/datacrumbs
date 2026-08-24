@@ -16,7 +16,13 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 
-LAYER_COLORS = {"posix": "#9b2226", "overall_application": "#6f2dbd", "mpi_io": "#1f7a1f"}
+LAYER_COLORS = {
+    "posix": "#9b2226",
+    "overall_application": "#6f2dbd",
+    "mpi_io": "#1f7a1f",
+    "mpi_comm": "#0a6ebd",
+    "memory": "#c9781f",
+}
 
 
 def parse_arguments():

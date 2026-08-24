@@ -29,6 +29,18 @@ DEFAULT_IOR_WRITE_SECONDS = 0.050916
 DEFAULT_IOR_READ_SECONDS = 0.002455
 POSIX_IO_NAMES = {"openat", "read", "write", "close", "fsync"}
 MPIIO_NAME_PREFIX = "MPI_File_"
+MPI_COMM_NAMES = {
+    "MPI_Send",
+    "MPI_Recv",
+    "MPI_Isend",
+    "MPI_Irecv",
+    "MPI_Wait",
+    "MPI_Waitall",
+    "MPI_Bcast",
+    "MPI_Barrier",
+    "MPI_Allreduce",
+}
+MEMORY_SYSCALL_NAMES = {"mmap", "munmap", "brk", "mprotect"}
 
 
 def parse_arguments():
@@ -53,6 +65,16 @@ def parse_arguments():
         "--mpiio-seconds",
         type=float,
         help="MPI-IO layer wall time; default is the sum of observed MPI_File_* durations.",
+    )
+    parser.add_argument(
+        "--mpi-comm-seconds",
+        type=float,
+        help="MPI communication layer wall time; default is the sum of observed durations.",
+    )
+    parser.add_argument(
+        "--memory-seconds",
+        type=float,
+        help="Memory syscall layer wall time; default is the sum of observed durations.",
     )
     parser.add_argument(
         "--output",
@@ -80,10 +102,22 @@ def layer_theta(events, is_layer_name):
 
 
 def trace_theta(events):
-    """Return per-interface theta/seconds per the paper's POSIX (alpha) and MPI-IO (beta) sets."""
+    """Return per-interface theta/seconds per the paper's POSIX (alpha) and MPI-IO (beta) sets,
+    plus the MPI communication and memory syscall layers."""
     theta_posix, seconds_posix = layer_theta(events, lambda name: name in POSIX_IO_NAMES)
     theta_mpiio, seconds_mpiio = layer_theta(events, lambda name: name.startswith(MPIIO_NAME_PREFIX))
-    return theta_posix, seconds_posix, theta_mpiio, seconds_mpiio
+    theta_mpi_comm, seconds_mpi_comm = layer_theta(events, lambda name: name in MPI_COMM_NAMES)
+    theta_memory, seconds_memory = layer_theta(events, lambda name: name in MEMORY_SYSCALL_NAMES)
+    return (
+        theta_posix,
+        seconds_posix,
+        theta_mpiio,
+        seconds_mpiio,
+        theta_mpi_comm,
+        seconds_mpi_comm,
+        theta_memory,
+        seconds_memory,
+    )
 
 
 def default_ior_metadata(trace_path):
@@ -102,9 +136,20 @@ def main():
         raise SystemExit(f"trace not found: {args.trace}")
     DATA.mkdir(exist_ok=True)
 
-    theta_posix, seconds_posix, theta_mpiio, seconds_mpiio = trace_theta(load_trace(args.trace))
+    (
+        theta_posix,
+        seconds_posix,
+        theta_mpiio,
+        seconds_mpiio,
+        theta_mpi_comm,
+        seconds_mpi_comm,
+        theta_memory,
+        seconds_memory,
+    ) = trace_theta(load_trace(args.trace))
     posix_seconds = args.posix_seconds if args.posix_seconds is not None else seconds_posix
     mpiio_seconds = args.mpiio_seconds if args.mpiio_seconds is not None else seconds_mpiio
+    mpi_comm_seconds = args.mpi_comm_seconds if args.mpi_comm_seconds is not None else seconds_mpi_comm
+    memory_seconds = args.memory_seconds if args.memory_seconds is not None else seconds_memory
 
     defaults = default_ior_metadata(args.trace) or {}
     workload_bytes = args.workload_bytes if args.workload_bytes is not None else defaults.get("bytes")
@@ -114,19 +159,6 @@ def main():
 
     rows = []
     if workload_bytes is not None and workload_bytes > 0.0:
-        theta_total = theta_posix + theta_mpiio
-        if theta_total > 0 and application_seconds is not None and application_seconds > 0.0:
-            rows.append(
-                {
-                    "layer": "overall_application",
-                    "ioi": f"{theta_total / workload_bytes:.12g}",
-                    "iops": f"{theta_total / application_seconds:.12g}",
-                    "theta": theta_total,
-                    "sigma_bytes": f"{workload_bytes:.12g}",
-                    "duration_seconds": f"{application_seconds:.12g}",
-                    "semantics": "Application wall-clock time (write+read phases); theta = POSIX + MPI-IO ops.",
-                }
-            )
         if theta_mpiio > 0 and mpiio_seconds > 0.0:
             rows.append(
                 {
@@ -151,6 +183,30 @@ def main():
                     "semantics": "Cumulative traced POSIX syscall duration; overhead-inclusive.",
                 }
             )
+        if theta_mpi_comm > 0 and mpi_comm_seconds > 0.0:
+            rows.append(
+                {
+                    "layer": "mpi_comm",
+                    "ioi": f"{theta_mpi_comm / workload_bytes:.12g}",
+                    "iops": f"{theta_mpi_comm / mpi_comm_seconds:.12g}",
+                    "theta": theta_mpi_comm,
+                    "sigma_bytes": f"{workload_bytes:.12g}",
+                    "duration_seconds": f"{mpi_comm_seconds:.12g}",
+                    "semantics": "Cumulative traced MPI point-to-point/collective duration; not I/O work, plotted against the same workload bytes for scale.",
+                }
+            )
+        if theta_memory > 0 and memory_seconds > 0.0:
+            rows.append(
+                {
+                    "layer": "memory",
+                    "ioi": f"{theta_memory / workload_bytes:.12g}",
+                    "iops": f"{theta_memory / memory_seconds:.12g}",
+                    "theta": theta_memory,
+                    "sigma_bytes": f"{workload_bytes:.12g}",
+                    "duration_seconds": f"{memory_seconds:.12g}",
+                    "semantics": "Cumulative traced mmap/munmap/brk/mprotect duration; not I/O work, plotted against the same workload bytes for scale.",
+                }
+            )
 
     with args.output.open("w", newline="", encoding="utf-8") as stream:
         fields = ["layer", "ioi", "iops", "theta", "sigma_bytes", "duration_seconds", "semantics"]
@@ -159,8 +215,9 @@ def main():
         writer.writerows(rows)
 
     print(f"trace={args.trace}")
-    print(f"theta_posix={theta_posix} theta_mpiio={theta_mpiio}")
-    print(f"cumulative_posix_seconds={seconds_posix:.6f} cumulative_mpiio_seconds={seconds_mpiio:.6f}")
+    print(f"theta_posix={theta_posix} theta_mpiio={theta_mpiio} theta_mpi_comm={theta_mpi_comm} theta_memory={theta_memory}")
+    print(f"cumulative_posix_seconds={seconds_posix:.6f} cumulative_mpiio_seconds={seconds_mpiio:.6f} "
+          f"cumulative_mpi_comm_seconds={seconds_mpi_comm:.6f} cumulative_memory_seconds={seconds_memory:.6f}")
     print(f"points={args.output}")
     print(f"points_count={len(rows)}")
     if theta_mpiio == 0:

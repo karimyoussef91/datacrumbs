@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Development-only signed probe generator for combined POSIX + MPI-IO tracing.
+"""Development-only signed probe generator for POSIX + MPI-IO + MPI comm + memory tracing.
 
-Adds an HMAC-signed probe document with two categories: the same core-only
-POSIX syscall set used elsewhere, plus a UPROBE category attached to the
-MPI-IO entry points in the linked libmpi.so, so a single trace captures both
-I/O stack layers for roofline analysis. Do not use this outside local testing.
+Adds an HMAC-signed probe document with four categories: the core-only POSIX
+syscall set, MPI-IO uprobes, MPI point-to-point/collective communication
+uprobes, and memory-management syscalls, all attached to the linked libmpi.so
+and the kernel respectively, so a single trace covers all four layers for
+roofline/analysis work. Do not use this outside local testing.
 """
 import hashlib
 import hmac
@@ -30,6 +31,20 @@ MPIIO_FUNCTIONS = [
     "MPI_File_iwrite_at",
 ]
 
+MPI_COMM_FUNCTIONS = [
+    "MPI_Send",
+    "MPI_Recv",
+    "MPI_Isend",
+    "MPI_Irecv",
+    "MPI_Wait",
+    "MPI_Waitall",
+    "MPI_Bcast",
+    "MPI_Barrier",
+    "MPI_Allreduce",
+]
+
+MEMORY_SYSCALLS = ["mmap", "munmap", "brk", "mprotect"]
+
 
 def main() -> int:
     if len(sys.argv) != 4:
@@ -53,6 +68,18 @@ def main() -> int:
             "binary_path": libmpi_path,
             "include_offsets": False,
             "functions": MPIIO_FUNCTIONS,
+        },
+        {
+            "type": 2,
+            "name": "ior-mpi-comm-uprobes",
+            "binary_path": libmpi_path,
+            "include_offsets": False,
+            "functions": MPI_COMM_FUNCTIONS,
+        },
+        {
+            "type": 0,
+            "name": "ior-memory-syscalls",
+            "functions": MEMORY_SYSCALLS,
         },
     ]
     summary = {"source": "core-only-local-ior-mpiio-test"}
